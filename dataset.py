@@ -10,11 +10,13 @@ import os.path
 import sys
 import io_routines
 
+from log import logger
 
 
-def split(all_ids_in, train_portion=0.75, val_portion=0.10, test_portion=0.05, seed=1):
+def split(all_ids_in, train_portion=0.85, val_portion=0.10, test_portion=0.05, seed=1):
     assert (train_portion + val_portion + test_portion == 1.0)
 
+    logger.info("Generating a dataset split with random seed {}".format(seed))
     random.seed(seed)
 
     all_ids = copy(all_ids_in)
@@ -39,20 +41,17 @@ def split(all_ids_in, train_portion=0.75, val_portion=0.10, test_portion=0.05, s
 def make_chairs_dataset(root, ids):
     samples = []
 
-    labels    = {format(i, "05d"): i for i in range(SAMPLE_NUMBER)}
-    all_ids   = list(labels.keys())
-
     for i in ids:
-	name_1    = "{}_img1.ppm".format(i)
-	name_2    = "{}_img2.ppm".format(i)
-	name_flow = "{}_flow.flo".format(i)
+        name_1    = "{}_img1.ppm".format(i)
+        name_2    = "{}_img2.ppm".format(i)
+        name_flow = "{}_flow.flo".format(i)
 
-	path_1 = os.path.join(root, name_1)
-	path_2 = os.path.join(root, name_2)
-	name_flow = os.path.join(root, name_flow)
+        path_1 = os.path.join(root, name_1)
+        path_2 = os.path.join(root, name_2)
+        path_flow = os.path.join(root, name_flow)
 
-	item = (name_1, name_2, name_flow)
-	labels.append(item)
+        item = (path_1, path_2, path_flow)
+        samples.append(item)
 
     return samples
 
@@ -72,13 +71,13 @@ class FlyingChairsDataset(data.Dataset):
             E.g, ``transforms.RandomCrop`` for images.
         target_transform (callable, optional): A function/transform that takes
             in the target and transforms it.
+        ids: the list of ids to use in this dataset
      Attributes:
-        samples (list): List of (sample path, class_index) tuples
-        targets (list): The class_index value for each image in the dataset
+        samples(list):
     """
 
     def __init__(self, root, ids, loader=default_loader,
-		 transform=None, target_transform=None):
+                 transform=None, target_transform=None):
 
         samples = make_chairs_dataset(root, ids)
         if len(samples) == 0:
@@ -102,7 +101,7 @@ class FlyingChairsDataset(data.Dataset):
         path1, path2, path_flow = self.samples[index]
         img1 = self.loader(path1)
         img2 = self.loader(path2)
-	flow = self.loader(path_flow)
+        flow = self.loader(path_flow)
 
         if self.transform is not None:
             img1 = self.transform(img1)
